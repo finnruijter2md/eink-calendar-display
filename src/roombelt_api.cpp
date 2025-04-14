@@ -93,27 +93,32 @@ DeviceState RoombeltApi::getDeviceState(int retryCount)
     String serverPath = "https://app.roombelt.com/api/device/summary";
     String sessionToken = storage.getString(TOKEN_STORAGE_KEY);
 
-    http.begin(serverPath.c_str());
-    http.addHeader("Cookie", "deviceSessionToken=" + sessionToken + ";");
-
-    int httpResponseCode = http.GET();
-
-    JsonDocument deviceState;
-    if (httpResponseCode == 200)
+    while (true) // Infinite retry loop
     {
-        String response = http.getString();
-        deserializeJson(deviceState, response);
-    }
-    http.end();
+        http.begin(serverPath.c_str());
+        http.addHeader("Cookie", "deviceSessionToken=" + sessionToken + ";");
 
-    // Retry in case of e.g. network glitch
-    if (httpResponseCode != 200 && httpResponseCode != 403 && httpResponseCode != 418 && retryCount > 0)
-    {
-        delay(500);
-        return getDeviceState(retryCount - 1);
-    }
+        int httpResponseCode = http.GET();
 
-    return DeviceState(httpResponseCode, deviceState);
+        JsonDocument deviceState;
+        if (httpResponseCode == 200)
+        {
+            String response = http.getString();
+            deserializeJson(deviceState, response);
+            http.end();
+            return DeviceState(httpResponseCode, deviceState);
+        }
+
+        http.end();
+
+        // Retry in case of e.g. network glitch, excluding specific error codes
+        if (httpResponseCode == 403 || httpResponseCode == 418)
+        {
+            throw ErrorHttp("Unrecoverable error code: " + String(httpResponseCode));
+        }
+
+        delay(500); // Wait before retrying
+    }
 }
 
 void RoombeltApi::assertWiFi()

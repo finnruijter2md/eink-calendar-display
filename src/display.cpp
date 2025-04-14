@@ -77,25 +77,9 @@ void Display::showRandomImage()
 
 Config Display::getConfig()
 {
-    initMicroSD();
-
-    SdFile file;
-    if (!file.open("/config.json", O_RDONLY))
-        throw Error("Unable to open config.json file on the micro SD card.");
-
-    auto size = file.fileSize();
-    if (size > 1024)
-        throw Error("config.json file is too large.");
-
-    char buffer[size];
-    file.read(buffer, size);
-
-    JsonDocument config;
-    deserializeJson(config, buffer);
-
     return Config{
-        ssid : config["ssid"],
-        password : config["password"],
+        ssid : "2manydots | Office",
+        password : "3d4IjAzXc7",
     };
 }
 
