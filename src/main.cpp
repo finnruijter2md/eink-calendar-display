@@ -14,12 +14,23 @@ void showWelcomeView(Display &display, RoombeltApi &api)
     sleep(2);
     display.showMessageScreen("Connecting to WiFi...");
     auto config = display.getConfig();
-    api.connect(config.ssid, config.password);
+    api.connect(config.ssid, config.password); // Call connect without assigning to a variable
+    Serial.println("Connecting to WiFi...");
+
+    // Check connection status using a separate method
+    if (!api.isConnected())
+    {
+        Serial.println("WiFi connection failed.");
+        display.showMessageScreen("WiFi connection failed. Restarting...");
+        sleep(2);
+        ESP.restart();
+    }
+
+    Serial.println("WiFi connected.");
     sleep(2);
     display.showMessageScreen("Connecting to Roombelt...");
     sleep(2);
 }
-
 DeviceState getDeviceState(RoombeltApi api)
 {
     auto device = api.getDeviceState();

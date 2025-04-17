@@ -1,5 +1,4 @@
 #include <ArduinoJson.h>
-
 #include "device_state.hpp"
 
 class RoombeltApi
@@ -8,6 +7,7 @@ public:
     ~RoombeltApi();
 
     void connect(String ssid, String password);
+    bool isConnected(); // Declaration only
     void disconnect();
 
     void removeDevice();

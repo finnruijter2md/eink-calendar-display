@@ -43,6 +43,10 @@ void RoombeltApi::connect(String ssid, String password)
     Serial.print("Local ESP32 IP: ");
     Serial.println(WiFi.localIP());
 }
+bool RoombeltApi::isConnected()
+{
+    return WiFi.status() == WL_CONNECTED; // Check if the WiFi is connected
+}
 void RoombeltApi::disconnect()
 {
     WiFi.disconnect();
@@ -93,34 +97,28 @@ DeviceState RoombeltApi::getDeviceState(int retryCount)
     String serverPath = "https://app.roombelt.com/api/device/summary";
     String sessionToken = storage.getString(TOKEN_STORAGE_KEY);
 
-    while (true) // Infinite retry loop
+    http.begin(serverPath.c_str());
+    http.addHeader("Cookie", "deviceSessionToken=" + sessionToken + ";");
+
+    int httpResponseCode = http.GET();
+
+    JsonDocument deviceState;
+    if (httpResponseCode == 200)
     {
-        http.begin(serverPath.c_str());
-        http.addHeader("Cookie", "deviceSessionToken=" + sessionToken + ";");
-
-        int httpResponseCode = http.GET();
-
-        JsonDocument deviceState;
-        if (httpResponseCode == 200)
-        {
-            String response = http.getString();
-            deserializeJson(deviceState, response);
-            http.end();
-            return DeviceState(httpResponseCode, deviceState);
-        }
-
-        http.end();
-
-        // Retry in case of e.g. network glitch, excluding specific error codes
-        if (httpResponseCode == 403 || httpResponseCode == 418)
-        {
-            throw ErrorHttp("Unrecoverable error code: " + String(httpResponseCode));
-        }
-
-        delay(500); // Wait before retrying
+        String response = http.getString();
+        deserializeJson(deviceState, response);
     }
-}
+    http.end();
 
+    // Retry in case of e.g. network glitch
+    if (httpResponseCode != 200 && httpResponseCode != 403 && httpResponseCode != 418 && retryCount < 500)
+    {
+        delay(500);
+        return getDeviceState(retryCount + 1); // Increment retry count
+    }
+
+    return DeviceState(httpResponseCode, deviceState);
+}
 void RoombeltApi::assertWiFi()
 {
     auto status = WiFi.status();
