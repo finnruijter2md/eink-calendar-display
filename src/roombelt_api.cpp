@@ -37,6 +37,7 @@ void RoombeltApi::connect(String ssid, String password)
     {
         Serial.print("Unable to connect to Wifi. Status: " + WiFi.status());
         throw ErrorWifiConnection("Unable to connect to Wifi. Status: " + String(WiFi.status()));
+        ESP.restart();
     }
 
     Serial.println("\nConnected to the WiFi network");
