@@ -64,11 +64,13 @@ String Storage::getString(const char *key, const char *defaultValue)
 
     checkError(err, String("Getting string size for ") + key);
 
-    char result[length];
+    char *result = new char[length];
     err = nvs_get_str(handle, key, result, &length);
     checkError(err, String("Getting string value for ") + key);
 
-    return result;
+    String value(result);
+    delete[] result;
+    return value;
 }
 
 void Storage::setString(const char *key, const char *value)
